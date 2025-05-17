@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SmartSchool.WebAPI.Data;
 using SmartSchool.WebAPI.models;
 
 namespace SmartSchool.WebAPI.Controllers
@@ -11,35 +13,22 @@ namespace SmartSchool.WebAPI.Controllers
     [Route("api/[controller]")]
     public class AlunoController : ControllerBase
     {
-        public AlunoController()
+        private readonly SmartSchoolContext _dbContext;
+        public AlunoController(SmartSchoolContext dbContext)
         {
-            
+            _dbContext = dbContext;
         }
-
-
-        public List<Aluno> Alunos = new List<Aluno>()
-        {
-            new Aluno(){
-                Id = 1, Nome = "Marcos", SobreNome = "Queróz", Telefone = "119636488905",
-            },
-            new Aluno(){
-                Id = 2, Nome = "Luciana", SobreNome = "Santos", Telefone = "11977488909"
-            },
-            new Aluno(){
-                Id = 3, Nome = "Maria", SobreNome = "Silva", Telefone = "11977488909"
-            }
-        };
-            
+  
         [HttpGet]
         public IActionResult Get()
         {
-            return Ok(Alunos);
+            return Ok(_dbContext.Alunos);
         }
 
         [HttpGet("byId/{id}")]
         public IActionResult GetById(int id)
         {
-            var alunos = Alunos.FirstOrDefault(a => a.Id == id);
+            var alunos = _dbContext.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == id);
             if(alunos == null) return BadRequest("O aluno não foi encontrado!");
         
             return Ok(alunos);
@@ -47,7 +36,7 @@ namespace SmartSchool.WebAPI.Controllers
         [HttpGet("ByName")]
         public IActionResult GetByName(string nome)
         {
-            var alunos = Alunos.FirstOrDefault(a => a.Nome.ToUpper().Contains(nome.ToUpper().ToUpper().Trim()));
+            var alunos = _dbContext.Alunos.AsNoTracking().FirstOrDefault(a => a.Nome.ToUpper().Contains(nome.ToUpper().ToUpper().Trim()));
             if(alunos == null) return BadRequest("O aluno não foi encontrado!");
         
             return Ok(alunos);
@@ -56,24 +45,48 @@ namespace SmartSchool.WebAPI.Controllers
         [HttpPost]
         public IActionResult Post(Aluno aluno)
         {
+            _dbContext.Alunos.Add(aluno);
+            _dbContext.SaveChanges();
+           // return Created($"/api/aluno/{aluno.Id}", aluno);
             return Ok(aluno);
         }
 
         [HttpPut("{id}")]
         public IActionResult Put(int id, Aluno aluno)
         {
-            return Ok(aluno);
+            var alunoBanco = _dbContext.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == id);
+            if(alunoBanco == null) return BadRequest("O aluno não foi encontrado!");
+
+            alunoBanco.Nome = aluno.Nome;
+            alunoBanco.SobreNome = aluno.SobreNome;
+            alunoBanco.Telefone = aluno.Telefone;
+
+            _dbContext.Alunos.Update(alunoBanco);
+            _dbContext.SaveChanges();
+            return Ok(alunoBanco);
         }
         
         [HttpPatch("{id}")]
         public IActionResult Patch(int id, Aluno aluno)
         {
-            return Ok(aluno);
+            var alunoBanco = _dbContext.Alunos.AsNoTracking().FirstOrDefault(a => a.Id == id);
+            if(alunoBanco == null) return BadRequest("O aluno não foi encontrado!");
+
+            alunoBanco.Nome = aluno.Nome;
+            alunoBanco.SobreNome = aluno.SobreNome;
+            alunoBanco.Telefone = aluno.Telefone;
+            _dbContext.Alunos.Update(alunoBanco);
+            return Ok(alunoBanco);
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Put(int id)
+        public IActionResult Delete(int id)
         {
+            var alunoBanco = _dbContext.Alunos.FirstOrDefault(a => a.Id == id);
+            if(alunoBanco == null) return BadRequest("O aluno não foi encontrado!");
+
+            _dbContext.Alunos.Remove(alunoBanco);
+            _dbContext.SaveChanges();
             return Ok();
         }
 
